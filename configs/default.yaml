@@ -1,0 +1,118 @@
+# Default configuration for the full P0 + P1 experiment.
+# Paths are relative to the project root.
+
+seed: 0        # training seed (initialisation, batch order, dropout, crop shuffling) and IRL demo sampling
+data_seed: 0   # documents, expert trajectories and the train/val/test split (BC and IRL pages)
+
+paths:
+  data_dir: data              # raw documents (data/raw) and processed transitions (data/processed)
+  checkpoint_dir: checkpoints
+  results_dir: results        # metrics/, figures/, logs/ are created inside
+
+document:
+  n_documents: 100
+  width: 600                  # pixels
+  height: 800                 # pixels
+  margin: 40                  # pixels, left/right/top/bottom
+  heading_font_size: [26, 30]
+  heading_words: [2, 5]
+  n_paragraphs: [3, 4]
+  lines_per_paragraph: [2, 5]
+  paragraph_gap: [18, 40]     # extra vertical pixels between paragraphs
+  # Paragraph styles: font size range, line spacing factor, word gap (px), max line width fraction
+  styles:
+    dense:  {font_size: [13, 14], line_spacing: 1.3, word_gap: [4, 6],   width_frac: [0.95, 1.0]}
+    normal: {font_size: [16, 17], line_spacing: 1.6, word_gap: [6, 9],   width_frac: [0.85, 1.0]}
+    sparse: {font_size: [19, 21], line_spacing: 2.0, word_gap: [10, 16], width_frac: [0.55, 0.75]}
+  style_probs: {dense: 0.4, normal: 0.35, sparse: 0.25}
+  # Text gray level (0 = black) on a white page; low-contrast text is lighter
+  text_gray_high: [0, 40]
+  text_gray_low: [120, 160]
+  p_low_contrast: 0.3
+  p_tinted_background: 0.25   # paragraph drawn on a light gray box
+  tint_gray: [222, 238]
+  word_length: [2, 11]        # characters per pseudo-word
+  word_length_mean: 5.0
+
+saliency:
+  ink_block_size: 25          # adaptive-threshold neighbourhood (px, odd)
+  ink_offset: 25              # pixel must be this much darker than local mean to count as ink
+  density_window: 15          # box filter (px) for local ink density
+  text_region_kernel: [15, 5] # closing kernel (w, h) that merges letters into text regions
+  contrast_sigma: 3.0         # Gaussian sigma (px) for local standard deviation
+  edge_sigma: 2.0             # Gaussian sigma (px) for smoothing gradient magnitude
+  saliency_sigma: 4.0         # final smoothing of the saliency map
+  contrast_weight: 0.5
+  edge_weight: 0.5
+
+observation:
+  crop_width: 0.5             # gaze-centred saliency window, fraction of page width
+  crop_height: 0.25           # fraction of page height
+  crop_size: 84               # crop is resized to crop_size x crop_size
+  feature_window: [40, 16]    # (w, h) pixels for local scalar features around the gaze
+
+expert:
+  trajectories_per_document: 5
+  max_fixations: 300
+  p_regress_base: 0.04
+  p_regress_low_contrast: 0.10   # added in proportion to (1 - word contrast)
+  regress_max_words: 3
+  p_skip_short: 0.45             # skip probability for words with <= short_word_chars characters
+  p_skip_long: 0.04
+  short_word_chars: 3
+  skip_saliency_factor: 0.5      # p_skip *= (1 - factor * saliency of skipped word)
+  landing_mean: 0.4              # preferred landing position as a fraction of word width
+  landing_std: 0.12
+  vertical_std: 0.15             # vertical landing noise as a fraction of line height
+  dwell:
+    base_ms: 140.0
+    per_char_ms: 18.0
+    density_ms: 120.0            # multiplied by local ink density in [0, 1]
+    low_contrast_ms: 100.0       # multiplied by (1 - word contrast)
+    noise_sigma: 0.10            # multiplicative log-normal noise
+    min_ms: 80.0
+
+split:
+  train: 0.7
+  val: 0.15
+  test: 0.15
+
+model:
+  conv_channels: [16, 32, 32]
+  cnn_pool: null             # null = flatten the 11x11 conv map; an int k = adaptive average pool to k x k
+  feature_hidden: 64
+  trunk_hidden: 128
+  dropout: 0.1
+
+training:
+  batch_size: 256
+  lr: 0.001
+  weight_decay: 0.0001
+  max_epochs: 30
+  patience: 5
+  lambda_movement: 1.0
+  lambda_dwell: 1.0
+  device: auto               # auto | cpu | cuda | mps
+  num_threads: 0             # 0 = PyTorch default
+
+evaluation:
+  rollout_trajectory: 0      # expert trajectory index whose start gaze / length is reused for rollouts
+  scanpath_docs: 2           # number of test documents drawn in scanpath figures
+  scanpath_max_fixations: 40 # fixations drawn per scanpath figure (keeps arrows legible)
+
+irl:
+  # Separate discretized MDP: R x C grid over the page inside the margins, fixed horizon T.
+  grid_rows: 8
+  grid_cols: 6
+  horizon: 30
+  # Ground-truth reward weights of the soft-optimal grid expert, in the order of
+  # visual_attention.irl.FEATURE_NAMES = [landing_saliency, landing_density, regress, skip, sweep]
+  true_weights: [1.0, 2.0, -1.5, -0.5, -1.0]
+  doc_id_offset: 1000        # IRL documents use ids 1000+ (disjoint from the BC documents 0-99)
+  n_train_docs: 30
+  n_test_docs: 15
+  trajectories_per_doc: 20
+  lr: 0.05                   # Adam step size (gradient ascent on the log-likelihood)
+  n_iters: 500
+  l2: 0.0
+  sample_sizes: [1, 5, 20]   # trajectories per document for the data-size sweep

@@ -1,5 +1,12 @@
-numpy
-matplotlib
-torch
-seaborn
-jupyter
+# Tested with Python 3.11.9 on Windows 11 (CPU only). Exact versions used for the reported results.
+# CPU wheel of PyTorch: pip install torch==2.14.1 --index-url https://download.pytorch.org/whl/cpu
+torch==2.14.1
+numpy==2.4.6
+opencv-python-headless==5.0.0.93
+matplotlib==3.11.2
+scikit-learn==1.9.1
+PyYAML==6.0.3
+pillow==12.3.0
+# test-only
+pytest==9.1.1
+scipy==1.17.1

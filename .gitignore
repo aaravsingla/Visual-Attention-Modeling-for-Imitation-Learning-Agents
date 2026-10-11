@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+build/
+dist/
+
+# Virtual environment
+.venv/
+
+# Generated artifacts (reproduce with scripts/reproduce_results.py)
+data/
+checkpoints/
+results/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Ad-hoc experiment outputs (see README training example)
+scratch/
